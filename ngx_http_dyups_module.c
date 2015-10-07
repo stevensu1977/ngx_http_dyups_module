@@ -931,6 +931,32 @@ ngx_http_dyups_show_detail(ngx_http_request_t *r)
         return NULL;
     }
 
+    // for (i = 0; i < dumcf->dy_upstreams.nelts; i++) {
+    //
+    //     duscf = &duscfs[i];
+    //
+    //     if (!duscf->dynamic) {
+    //         continue;
+    //     }
+    //
+    //     if (duscf->deleted) {
+    //         continue;
+    //     }
+    //
+    //     host = duscf->upstream->host;
+    //     buf->last = ngx_sprintf(buf->last, "%V\n", &host);
+    //
+    //     us = duscf->upstream->servers->elts;
+    //     for (j = 0; j < duscf->upstream->servers->nelts; j++) {
+    //         buf->last = ngx_sprintf(buf->last, "server %V\n",
+    //                                 &us[j].addrs->name);
+    //     }
+    //     buf->last = ngx_sprintf(buf->last, "\n");
+    // }
+
+
+    buf->last = ngx_sprintf(buf->last, "{\n");
+
     for (i = 0; i < dumcf->dy_upstreams.nelts; i++) {
 
         duscf = &duscfs[i];
@@ -944,16 +970,27 @@ ngx_http_dyups_show_detail(ngx_http_request_t *r)
         }
 
         host = duscf->upstream->host;
-        buf->last = ngx_sprintf(buf->last, "%V\n", &host);
+
+        buf->last = ngx_sprintf(buf->last, "\"%V\":[", &host);
 
         us = duscf->upstream->servers->elts;
         for (j = 0; j < duscf->upstream->servers->nelts; j++) {
-            buf->last = ngx_sprintf(buf->last, "server %V\n",
+            buf->last = ngx_sprintf(buf->last, "{\"server\":\"%V\"}",
                                     &us[j].addrs->name);
-        }
-        buf->last = ngx_sprintf(buf->last, "\n");
-    }
+            if(j!=duscf->upstream->servers->nelts-1){
+              buf->last = ngx_sprintf(buf->last, ",");
+            }
 
+        }
+        buf->last = ngx_sprintf(buf->last, "]");
+
+        if(i<(dumcf->dy_upstreams.nelts-2)){
+          buf->last = ngx_sprintf(buf->last, ",\n");
+        }
+    }
+      buf->last = ngx_sprintf(buf->last, "\n}");
+      r->headers_out.content_type.len = sizeof("application/json") - 1;
+    r->headers_out.content_type.data = (u_char *) "application/json";
     return buf;
 }
 
